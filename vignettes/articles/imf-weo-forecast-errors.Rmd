@@ -49,6 +49,8 @@ weo <- ed_get(
   quiet = TRUE
 )
 
+stopifnot(is.data.frame(weo), nrow(weo) > 0L)
+
 growth <- weo |>
   filter(
     series_id == "NGDP_RPCH",
@@ -60,6 +62,8 @@ growth <- weo |>
     vintage_key = 2L * publication_year + release_order
   ) |>
   select(-series_id, -release_order)
+
+stopifnot(nrow(growth) > 0L)
 ```
 
 The three-letter country-code restriction drops regional and world aggregates, whose numeric identifiers are not consistently padded across vintages. `vintage_key` orders Spring before Fall within each year.
@@ -77,13 +81,28 @@ actuals <- growth |>
   filter(vintage_key == max(vintage_key)) |>
   select(entity_id, year, actual = value)
 
-predictions <- growth |>
+stopifnot(
+  nrow(latest_vintage) == 1L,
+  anyDuplicated(actuals[c("entity_id", "year")]) == 0L
+)
+
+eligible <- growth |>
   mutate(horizon = year - publication_year) |>
   filter(
     between(horizon, 1, 5),
     year <= latest_vintage$publication_year - 2
+  )
+
+unmatched <- eligible |>
+  anti_join(actuals, join_by(entity_id, year)) |>
+  nrow()
+
+predictions <- eligible |>
+  inner_join(
+    actuals,
+    join_by(entity_id, year),
+    relationship = "many-to-one"
   ) |>
-  inner_join(actuals, join_by(entity_id, year)) |>
   transmute(
     entity_id,
     entity_name,
@@ -102,7 +121,19 @@ predictions <- growth |>
     actual,
     forecast_error = abs(actual - forecast)
   )
+
+stopifnot(
+  nrow(predictions) > 0L,
+  nrow(predictions) == nrow(eligible) - unmatched,
+  anyDuplicated(predictions[c(
+    "entity_id", "year", "publication_year", "publication_release"
+  )]) == 0L,
+  !anyNA(predictions),
+  setequal(predictions$horizon, 1:5)
+)
 ```
+
+The join excludes `r format(unmatched, big.mark = ",")` eligible forecasts because their country-year pairs have no outcome in the latest vintage. Each remaining forecast must match exactly one outcome; the checks above guard against duplicate keys or an unexpectedly empty sample.
 
 The absolute forecast error is `abs(actual - forecast)`, measured in **percentage points of real GDP growth**. For example, a forecast of 3% and an outcome of 1% imply an absolute error of 2 percentage points. The latest vintage is a useful, consistently defined benchmark, but its historical growth figures may still be revised; they are not immutable final outcomes.
 
@@ -193,7 +224,7 @@ knitr::kable(
 )
 ```
 
-The mean absolute error is `r round(horizon_summary$mean_absolute_error[horizon_summary$horizon == 1], 2)` percentage points at the one-year horizon and `r round(horizon_summary$mean_absolute_error[horizon_summary$horizon == 5], 2)` at the five-year horizon. Their difference (five-year minus one-year) is `r round(horizon_summary$mean_absolute_error[horizon_summary$horizon == 5] - horizon_summary$mean_absolute_error[horizon_summary$horizon == 1], 2)` percentage points. This raw comparison summarizes the observed horizon pattern; it does not hold target-year conditions constant.
+The mean absolute error is `r round(horizon_summary$mean_absolute_error[horizon_summary$horizon == 1], 2)` percentage points at the one-year horizon and `r round(horizon_summary$mean_absolute_error[horizon_summary$horizon == 5], 2)` at the five-year horizon. Their difference (five-year minus one-year) is `r round(horizon_summary$mean_absolute_error[horizon_summary$horizon == 5] - horizon_summary$mean_absolute_error[horizon_summary$horizon == 1], 2)` percentage points. Errors are thus `r if (horizon_summary$mean_absolute_error[5] > horizon_summary$mean_absolute_error[1]) "larger" else "no larger"` at five years than at one year, but `r if (all(diff(horizon_summary$mean_absolute_error) > 0)) "rise at every intermediate step" else "do not rise at every intermediate step"`: the four-year MAE is `r round(horizon_summary$mean_absolute_error[4], 2)` compared with `r round(horizon_summary$mean_absolute_error[5], 2)` at five years. This raw comparison does not hold target-year conditions or sample composition constant.
 
 ```{r vintage-boxplot, fig.cap="Distribution of absolute forecast errors by publication year and release. The display is restricted to errors of up to 15 percentage points."}
 predictions |>
@@ -218,34 +249,28 @@ Each box summarizes the middle half of errors for one vintage, with a line at th
 
 ## Compare horizons using regressions
 
-To compare horizons more systematically, we regress absolute forecast errors on horizon indicators, using the one-year horizon as the reference category and controlling for Spring versus Fall releases. The second specification adds target-year fixed effects to account for shocks common to forecasts targeting the same calendar year. The third also adds publication-year fixed effects. Standard errors are clustered by country to allow correlations among forecasts for the same country.
+To compare horizons more systematically, we regress absolute forecast errors on horizon indicators, using the one-year horizon as the reference category and controlling for Spring versus Fall releases. Model 1 includes these controls; Model 2 adds target-year fixed effects to account for shocks common to forecasts targeting the same calendar year. Standard errors are clustered by country to allow correlations among forecasts for the same country.
+
+We omit publication-year fixed effects: because horizon equals target year minus publication year, including both sets of year effects would make the full set of horizon comparisons unidentified.
 
 ```{r regressions}
 setFixest_dict(c(
   forecast_error = "Forecast Error",
   horizon = "Horizon",
   year = "Target Year",
-  vintage = "Vintage",
-  publication_releaseFall = "Fall",
-  publication_year = "Publication Year"
+  publication_releaseFall = "Fall"
 ))
 
 clusters <- ~entity_id
 
 models <- list(
-  "Horizon" = feols(
+  "Model 1" = feols(
     forecast_error ~ i(horizon, ref = 1) + publication_release,
     predictions,
     vcov = clusters
   ),
-  "+ Year FE" = feols(
+  "Model 2" = feols(
     forecast_error ~ i(horizon, ref = 1) + publication_release | year,
-    predictions,
-    vcov = clusters
-  ),
-  "+ Publication Year FE" = feols(
-    forecast_error ~ i(horizon, ref = 1) +
-      publication_release | year + publication_year,
     predictions,
     vcov = clusters
   )
@@ -257,9 +282,9 @@ knitr::kable(
 )
 ```
 
-A positive horizon coefficient means the corresponding horizon has a larger expected absolute error than the one-year horizon within that specification; a negative coefficient means a smaller error. Comparing columns shows how these associations change when common target-year and publication-year conditions are controlled for. These are descriptive associations, not causal effects of increasing a forecast horizon.
+A positive horizon coefficient means a larger expected absolute error than at one year within that specification. In Model 1, the five-year coefficient is `r round(coef(models[[1]])["horizon::5"], 2)` percentage points; in Model 2 it is `r round(coef(models[[2]])["horizon::5"], 2)`. `r if (all(coef(models[[2]])[paste0("horizon::", 2:5)] > 0)) "All Model 2 horizon coefficients are positive: longer-horizon forecasts remain less accurate on average after accounting for common target-year shocks." else "The Model 2 horizon coefficients are not all positive, so the adjusted differences vary by horizon."`
 
-**Identification note:** The horizon is defined exactly as target year minus publication year. When both year fixed effects are included, the full set of horizon indicators is linearly dependent on those fixed effects. `fixest` may therefore drop a collinear indicator in the final column; coefficients in that specification should not be interpreted as a complete set of independent comparisons with the one-year horizon.
+The Fall coefficient is `r round(coef(models[[1]])["publication_releaseFall"], 2)` in Model 1 and `r round(coef(models[[2]])["publication_releaseFall"], 2)` in Model 2. A negative coefficient means slightly smaller absolute errors than for Spring forecasts, conditional on the included controls. Fall releases have more information available within the publication year, but these regressions do not establish why their errors differ. All coefficients describe associations, not causal effects of forecast horizon or release timing.
 
 ## What have we learned?
 
