@@ -1,6 +1,10 @@
 ---
 title: "How Accurate Are IMF Growth Forecasts?"
 output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{How Accurate Are IMF Growth Forecasts?}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
