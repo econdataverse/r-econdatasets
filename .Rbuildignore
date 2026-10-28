@@ -10,4 +10,5 @@
 ^docs$
 ^pkgdown$
 ^CRAN-SUBMISSION$
+^vignettes/articles$
 ^\.lintr$

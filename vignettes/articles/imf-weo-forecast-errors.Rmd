@@ -1,0 +1,293 @@
+---
+title: "How Accurate Are IMF Growth Forecasts?"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{How Accurate Are IMF Growth Forecasts?}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.height = 4.5,
+  fig.align = "center"
+)
+```
+
+## The question
+
+How well does the International Monetary Fund (IMF) predict real GDP growth, and does forecast accuracy change when the prediction is made further in advance? Forecast quality matters because governments, businesses, and researchers use the IMF's *World Economic Outlook* (WEO) to inform decisions. Earlier evaluations include [Timmermann (2007)](https://www.imf.org/External/Pubs/FT/staffp/2007/01/timmerma.htm) and [Genberg and Martinez (2014)](https://ieo.imf.org/-/media/IEO/Files/evaluations/completed/03-18-2014-imf-forecasts-process-quality-and-country-perspectives/BP-14-04.pdf).
+
+This article uses `econdatasets::ed_get()` to download WEO vintages, match forecasts to the latest available estimates of growth, and describe absolute forecast errors at horizons of one to five years. The exercise measures *accuracy*, not whether forecasts systematically over- or underestimate growth: taking absolute values removes the direction of the error.
+
+## Download the WEO data
+
+Each WEO vintage is identified by its publication year and release (Spring or Fall). We request only the columns needed for this analysis, because the underlying `economic_outlook` table is large. We then keep the real GDP growth series (`NGDP_RPCH`), country identifiers with three uppercase letters, and nonmissing values. Filtering by the series identifier avoids problems caused by changes in variable labels over time.
+
+```{r data}
+library(econdatasets)
+library(dplyr)
+library(forcats)
+library(ggplot2)
+library(fixest)
+
+weo <- ed_get(
+  "imfweo",
+  "economic_outlook",
+  columns = c(
+    "entity_id",
+    "entity_name",
+    "series_id",
+    "year",
+    "value",
+    "publication_year",
+    "publication_release"
+  ),
+  quiet = TRUE
+)
+
+stopifnot(is.data.frame(weo), nrow(weo) > 0L)
+
+growth <- weo |>
+  filter(
+    series_id == "NGDP_RPCH",
+    grepl("^[A-Z]{3}$", entity_id),
+    !is.na(value)
+  ) |>
+  mutate(
+    release_order = if_else(publication_release == "Fall", 1L, 0L),
+    vintage_key = 2L * publication_year + release_order
+  ) |>
+  select(-series_id, -release_order)
+
+stopifnot(nrow(growth) > 0L)
+```
+
+The three-letter country-code restriction drops regional and world aggregates, whose numeric identifiers are not consistently padded across vintages. `vintage_key` orders Spring before Fall within each year.
+
+## Match forecasts with outcomes
+
+For each country and target year, we use the GDP-growth value reported in the most recent WEO vintage as the comparison outcome. A forecast's **horizon** is the target year minus its publication year: a 2020 release forecasting 2023 growth has a three-year horizon. We retain horizons from one through five years, and exclude target years less than two years before the latest publication year so that the comparison outcomes have had some time to mature.
+
+```{r predictions}
+latest_vintage <- growth |>
+  filter(vintage_key == max(vintage_key)) |>
+  distinct(publication_year, publication_release)
+
+actuals <- growth |>
+  filter(vintage_key == max(vintage_key)) |>
+  select(entity_id, year, actual = value)
+
+stopifnot(
+  nrow(latest_vintage) == 1L,
+  anyDuplicated(actuals[c("entity_id", "year")]) == 0L
+)
+
+eligible <- growth |>
+  mutate(horizon = year - publication_year) |>
+  filter(
+    between(horizon, 1, 5),
+    year <= latest_vintage$publication_year - 2
+  )
+
+unmatched <- eligible |>
+  anti_join(actuals, join_by(entity_id, year)) |>
+  nrow()
+
+predictions <- eligible |>
+  inner_join(
+    actuals,
+    join_by(entity_id, year),
+    relationship = "many-to-one"
+  ) |>
+  transmute(
+    entity_id,
+    entity_name,
+    year,
+    publication_year,
+    publication_release = factor(
+      publication_release,
+      levels = c("Spring", "Fall")
+    ),
+    vintage = fct_reorder(
+      paste(publication_year, publication_release),
+      vintage_key
+    ),
+    horizon,
+    forecast = value,
+    actual,
+    forecast_error = abs(actual - forecast)
+  )
+
+stopifnot(
+  nrow(predictions) > 0L,
+  nrow(predictions) == nrow(eligible) - unmatched,
+  anyDuplicated(predictions[c(
+    "entity_id", "year", "publication_year", "publication_release"
+  )]) == 0L,
+  !anyNA(predictions),
+  setequal(predictions$horizon, 1:5)
+)
+```
+
+The join excludes `r format(unmatched, big.mark = ",")` eligible forecasts because their country-year pairs have no outcome in the latest vintage. Each remaining forecast must match exactly one outcome; the checks above guard against duplicate keys or an unexpectedly empty sample.
+
+The absolute forecast error is `abs(actual - forecast)`, measured in **percentage points of real GDP growth**. For example, a forecast of 3% and an outcome of 1% imply an absolute error of 2 percentage points. The latest vintage is a useful, consistently defined benchmark, but its historical growth figures may still be revised; they are not immutable final outcomes.
+
+## Describe the sample
+
+We first count the country-forecast observations, the countries represented, the publication vintages, and the target-year range. Multiple releases and forecast horizons can contribute observations for the same country and target year, so these are not independent country-year observations.
+
+```{r sample}
+sample_summary <- predictions |>
+  summarize(
+    observations = n(),
+    countries = n_distinct(entity_id),
+    vintages = n_distinct(vintage),
+    target_years = paste(range(year), collapse = "-")
+  )
+
+knitr::kable(sample_summary, caption = "Forecast sample")
+```
+
+The analysis contains `r format(sample_summary$observations, big.mark = ",")` forecasts for `r sample_summary$countries` countries across `r sample_summary$vintages` vintages. It covers target years `r sample_summary$target_years`; these counts describe the matched sample rather than every observation in the downloaded WEO table.
+
+```{r descriptive-statistics}
+summarize_variable <- function(x) {
+  tibble(
+    n = sum(!is.na(x)),
+    mean = mean(x, na.rm = TRUE),
+    sd = sd(x, na.rm = TRUE),
+    q05 = quantile(x, 0.05, na.rm = TRUE),
+    q25 = quantile(x, 0.25, na.rm = TRUE),
+    median = median(x, na.rm = TRUE),
+    q75 = quantile(x, 0.75, na.rm = TRUE),
+    q95 = quantile(x, 0.95, na.rm = TRUE)
+  )
+}
+
+descriptive_stats <- bind_rows(
+  forecast = summarize_variable(predictions$forecast),
+  actual = summarize_variable(predictions$actual),
+  forecast_error = summarize_variable(predictions$forecast_error),
+  .id = "variable"
+)
+
+knitr::kable(
+  descriptive_stats,
+  digits = 2,
+  caption = "Distribution of forecasts, outcomes, and absolute errors"
+)
+```
+
+The median absolute error is `r round(descriptive_stats$median[descriptive_stats$variable == "forecast_error"], 2)` percentage points; the 95th percentile is `r round(descriptive_stats$q95[descriptive_stats$variable == "forecast_error"], 2)` percentage points. The difference indicates that some forecasts miss the latest growth estimate by substantially more than a typical forecast. The signed forecast and actual growth rates can be negative, but absolute forecast errors cannot.
+
+## How does coverage vary by vintage?
+
+```{r coverage-plot, fig.cap="Number of matched forecasts by publication year and release."}
+predictions |>
+  group_by(publication_year, publication_release) |>
+  summarize(n = n(), .groups = "drop") |>
+  ggplot(aes(x = publication_year, y = n, fill = publication_release)) +
+  geom_col() +
+  labs(
+    x = "Publication year",
+    y = "Matched forecasts",
+    fill = "Release"
+  ) +
+  theme_minimal()
+```
+
+The bars show the contribution of each Spring and Fall vintage to the final sample. The counts need not be equal: coverage differs across vintages, and recent publications have fewer eligible future target years under the two-year cutoff. These differences in sample composition matter when comparing forecast errors across publication years.
+
+## How large are errors at different horizons?
+
+The following table reports the mean absolute error (MAE) and median absolute error separately for each horizon. This directly addresses whether the IMF's forecasts become less accurate further into the future, while keeping in mind that each horizon may cover a different mix of years and countries.
+
+```{r horizon-summary}
+horizon_summary <- predictions |>
+  group_by(horizon) |>
+  summarize(
+    observations = n(),
+    mean_absolute_error = mean(forecast_error),
+    median_absolute_error = median(forecast_error),
+    .groups = "drop"
+  )
+
+knitr::kable(
+  horizon_summary,
+  digits = 2,
+  caption = "Absolute forecast errors by horizon (percentage points)"
+)
+```
+
+The mean absolute error is `r round(horizon_summary$mean_absolute_error[horizon_summary$horizon == 1], 2)` percentage points at the one-year horizon and `r round(horizon_summary$mean_absolute_error[horizon_summary$horizon == 5], 2)` at the five-year horizon. Their difference (five-year minus one-year) is `r round(horizon_summary$mean_absolute_error[horizon_summary$horizon == 5] - horizon_summary$mean_absolute_error[horizon_summary$horizon == 1], 2)` percentage points. Errors are thus `r if (horizon_summary$mean_absolute_error[5] > horizon_summary$mean_absolute_error[1]) "larger" else "no larger"` at five years than at one year, but `r if (all(diff(horizon_summary$mean_absolute_error) > 0)) "rise at every intermediate step" else "do not rise at every intermediate step"`: the four-year MAE is `r round(horizon_summary$mean_absolute_error[4], 2)` compared with `r round(horizon_summary$mean_absolute_error[5], 2)` at five years. This raw comparison does not hold target-year conditions or sample composition constant.
+
+```{r vintage-boxplot, fig.cap="Distribution of absolute forecast errors by publication year and release. The display is restricted to errors of up to 15 percentage points."}
+predictions |>
+  ggplot(aes(
+    x = factor(publication_year),
+    y = forecast_error,
+    fill = publication_release
+  )) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_boxplot(outlier.shape = NA) +
+  coord_cartesian(ylim = c(0, 15)) +
+  labs(
+    x = "Publication year",
+    y = "Absolute error (percentage points)",
+    fill = "Release"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Each box summarizes the middle half of errors for one vintage, with a line at the median. The distributions vary across publication years and releases, reflecting changes in forecasting conditions as well as sample composition. Extreme errors are excluded **from the display only** to keep the boxes readable; they remain in the statistics and regressions.
+
+## Compare horizons using regressions
+
+To compare horizons more systematically, we regress absolute forecast errors on horizon indicators, using the one-year horizon as the reference category and controlling for Spring versus Fall releases. Model 1 includes these controls; Model 2 adds target-year fixed effects to account for shocks common to forecasts targeting the same calendar year. Standard errors are clustered by country to allow correlations among forecasts for the same country.
+
+We omit publication-year fixed effects: because horizon equals target year minus publication year, including both sets of year effects would make the full set of horizon comparisons unidentified.
+
+```{r regressions}
+setFixest_dict(c(
+  forecast_error = "Forecast Error",
+  horizon = "Horizon",
+  year = "Target Year",
+  publication_releaseFall = "Fall"
+))
+
+clusters <- ~entity_id
+
+models <- list(
+  "Model 1" = feols(
+    forecast_error ~ i(horizon, ref = 1) + publication_release,
+    predictions,
+    vcov = clusters
+  ),
+  "Model 2" = feols(
+    forecast_error ~ i(horizon, ref = 1) + publication_release | year,
+    predictions,
+    vcov = clusters
+  )
+)
+
+knitr::kable(
+  etable(models, coefstat = "tstat", tex = FALSE),
+  caption = "Absolute forecast error regressions; t-statistics shown"
+)
+```
+
+A positive horizon coefficient means a larger expected absolute error than at one year within that specification. In Model 1, the five-year coefficient is `r round(coef(models[[1]])["horizon::5"], 2)` percentage points; in Model 2 it is `r round(coef(models[[2]])["horizon::5"], 2)`. `r if (all(coef(models[[2]])[paste0("horizon::", 2:5)] > 0)) "All Model 2 horizon coefficients are positive: longer-horizon forecasts remain less accurate on average after accounting for common target-year shocks." else "The Model 2 horizon coefficients are not all positive, so the adjusted differences vary by horizon."`
+
+The Fall coefficient is `r round(coef(models[[1]])["publication_releaseFall"], 2)` in Model 1 and `r round(coef(models[[2]])["publication_releaseFall"], 2)` in Model 2. A negative coefficient means slightly smaller absolute errors than for Spring forecasts, conditional on the included controls. Fall releases have more information available within the publication year, but these regressions do not establish why their errors differ. All coefficients describe associations, not causal effects of forecast horizon or release timing.
+
+## What have we learned?
+
+With just `ed_get()` and a short analysis pipeline, we can investigate an economic question using historical forecast vintages. The horizon table gives an easily interpreted comparison in percentage points, while the regressions show how the comparison changes after accounting for calendar-year differences. The exercise has three limits: latest-vintage growth estimates can be revised, sample composition varies across horizons and releases, and absolute errors measure size but not the direction of forecast bias.
+
+For further background, see [Timmermann (2007)](https://www.imf.org/External/Pubs/FT/staffp/2007/01/timmerma.htm), [the IMF Independent Evaluation Office (2014)](https://bookstore.imf.org/books/IEO-Evaluation-Report-IMF-Forecasts-Process%2C-Quality%2C-and-Country-Perspectives), [Genberg and Martinez (2014)](https://ieo.imf.org/-/media/IEO/Files/evaluations/completed/03-18-2014-imf-forecasts-process-quality-and-country-perspectives/BP-14-04.pdf), and [Beaudry and Willems (2022)](https://www.aeaweb.org/articles?id=10.1257/mac.20190332) for related discussion of forecast performance and over-optimism.
