@@ -12,6 +12,7 @@ You can install `econdatasets` from
 [CRAN](https://cran.r-project.org/package=econdatasets) via:
 
 ``` r
+
 install.packages("econdatasets")
 ```
 
@@ -19,6 +20,7 @@ You can install the development version of `econdatasets` from
 [GitHub](https://github.com/tidy-intelligence/r-econdatasets) with:
 
 ``` r
+
 # install.packages("pak")
 pak::pak("tidy-intelligence/r-econdatasets")
 ```
@@ -26,6 +28,7 @@ pak::pak("tidy-intelligence/r-econdatasets")
 ## Usage
 
 ``` r
+
 library(econdatasets)
 ```
 
@@ -34,6 +37,7 @@ Use
 to load a specific table from a dataset:
 
 ``` r
+
 counterparts <- ed_get("wbids", "counterparts")
 #> → Reading dataset from
 #>   https://huggingface.co/datasets/econdataverse/wbids/resolve/main/counterparts.parquet
@@ -58,6 +62,7 @@ Use
 to see all tables available in a specific dataset:
 
 ``` r
+
 ed_get_tables("imfweo")
 #> → Fetching file tree from
 #>   https://huggingface.co/api/datasets/econdataverse/imfweo/tree/main?recursive=1
@@ -77,6 +82,7 @@ Use
 to view all published datasets:
 
 ``` r
+
 ed_get_datasets()
 #> → Fetching dataset list from
 #>   https://huggingface.co/api/datasets?author=econdataverse
