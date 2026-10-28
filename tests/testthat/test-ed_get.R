@@ -12,7 +12,7 @@ test_that("ed_get works with valid dataset and table", {
       if (!is.null(col_select)) {
         return(test_df[, col_select, drop = FALSE])
       }
-      return(test_df)
+      test_df
     },
     .package = "arrow"
   )
@@ -36,7 +36,7 @@ test_that("ed_get works with column selection", {
       if (!is.null(col_select)) {
         return(test_df[, col_select, drop = FALSE])
       }
-      return(test_df)
+      test_df
     },
     .package = "arrow"
   )
@@ -58,7 +58,7 @@ test_that("ed_get shows messages when quiet = FALSE", {
 
   local_mocked_bindings(
     read_parquet = function(file_url, col_select = NULL) {
-      return(test_df)
+      test_df
     },
     .package = "arrow"
   )
@@ -94,7 +94,7 @@ test_that("ed_get constructs correct URL", {
   local_mocked_bindings(
     read_parquet = function(file_url, col_select = NULL) {
       captured_url <<- file_url
-      return(data.frame(x = 1))
+      data.frame(x = 1)
     },
     .package = "arrow"
   )

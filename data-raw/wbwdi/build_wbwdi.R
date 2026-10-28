@@ -28,7 +28,7 @@ download_indicator <- function(indicator, total, monthly = FALSE) {
   tryCatch(
     {
       ind <- wdi_get("all", indicator) |>
-        rename(series_id = indicator_id)
+        dplyr::rename(series_id = "indicator_id")
       write_parquet(ind, file_path)
       list(
         indicator = indicator,
