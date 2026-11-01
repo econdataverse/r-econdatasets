@@ -157,7 +157,7 @@ The analysis contains `r format(sample_summary$observations, big.mark = ",")` fo
 
 ```{r descriptive-statistics}
 summarize_variable <- function(x) {
-  tibble(
+  tibble::tibble(
     n = sum(!is.na(x)),
     mean = mean(x, na.rm = TRUE),
     sd = sd(x, na.rm = TRUE),
