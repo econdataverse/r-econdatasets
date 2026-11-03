@@ -27,3 +27,4 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 URL: https://tidy-intelligence.github.io/r-econdatasets/, https://github.com/tidy-intelligence/r-econdatasets
 BugReports: https://github.com/tidy-intelligence/r-econdatasets/issues
+Config/Needs/website: rmarkdown, dplyr, forcats, ggplot2, fixest
