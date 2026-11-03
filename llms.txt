@@ -126,3 +126,9 @@ contribute, please follow these steps:
 - [`ed_get_tables()`](https://tidy-intelligence.github.io/r-econdatasets/reference/ed_get_tables.md)
   : List Parquet tables for a specific EconDataverse dataset
 
+# Articles
+
+### All vignettes
+
+- [How Accurate Are IMF Growth
+  Forecasts?](https://tidy-intelligence.github.io/r-econdatasets/articles/imf-weo-forecast-errors.md):
