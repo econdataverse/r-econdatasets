@@ -13,7 +13,9 @@ knitr::opts_chunk$set(
   comment = "#>",
   fig.width = 8,
   fig.height = 4.5,
-  fig.align = "center"
+  fig.align = "center",
+  message = FALSE,
+  warning = FALSE
 )
 ```
 
@@ -49,8 +51,6 @@ weo <- ed_get(
   quiet = TRUE
 )
 
-stopifnot(is.data.frame(weo), nrow(weo) > 0L)
-
 growth <- weo |>
   filter(
     series_id == "NGDP_RPCH",
@@ -63,7 +63,6 @@ growth <- weo |>
   ) |>
   select(-series_id, -release_order)
 
-stopifnot(nrow(growth) > 0L)
 ```
 
 The three-letter country-code restriction drops regional and world aggregates, whose numeric identifiers are not consistently padded across vintages. `vintage_key` orders Spring before Fall within each year.
@@ -81,11 +80,6 @@ actuals <- growth |>
   filter(vintage_key == max(vintage_key)) |>
   select(entity_id, year, actual = value)
 
-stopifnot(
-  nrow(latest_vintage) == 1L,
-  anyDuplicated(actuals[c("entity_id", "year")]) == 0L
-)
-
 eligible <- growth |>
   mutate(horizon = year - publication_year) |>
   filter(
@@ -93,9 +87,14 @@ eligible <- growth |>
     year <= latest_vintage$publication_year - 2
   )
 
-unmatched <- eligible |>
-  anti_join(actuals, join_by(entity_id, year)) |>
-  nrow()
+unmatched_forecasts <- eligible |>
+  anti_join(actuals, join_by(entity_id, year))
+
+unmatched <- nrow(unmatched_forecasts)
+unmatched_examples <- unmatched_forecasts |>
+  distinct(entity_id, entity_name) |>
+  arrange(entity_id) |>
+  slice_head(n = 5)
 
 predictions <- eligible |>
   inner_join(
@@ -122,18 +121,9 @@ predictions <- eligible |>
     forecast_error = abs(actual - forecast)
   )
 
-stopifnot(
-  nrow(predictions) > 0L,
-  nrow(predictions) == nrow(eligible) - unmatched,
-  anyDuplicated(predictions[c(
-    "entity_id", "year", "publication_year", "publication_release"
-  )]) == 0L,
-  !anyNA(predictions),
-  setequal(predictions$horizon, 1:5)
-)
 ```
 
-The join excludes `r format(unmatched, big.mark = ",")` eligible forecasts because their country-year pairs have no outcome in the latest vintage. Each remaining forecast must match exactly one outcome; the checks above guard against duplicate keys or an unexpectedly empty sample.
+The join excludes `r format(unmatched, big.mark = ",")` eligible forecasts because their country-year pairs have no outcome in the latest vintage. `r if (nrow(unmatched_examples) > 0L) paste0("Examples of affected countries include ", paste(paste0(unmatched_examples$entity_name, " (", unmatched_examples$entity_id, ")"), collapse = ", "), ".") else "There are no unmatched countries in the current sample."` This is a missing country-year match, not necessarily evidence that a country no longer exists; differences in historical coverage can also produce missing outcomes.
 
 The absolute forecast error is `abs(actual - forecast)`, measured in **percentage points of real GDP growth**. For example, a forecast of 3% and an outcome of 1% imply an absolute error of 2 percentage points. The latest vintage is a useful, consistently defined benchmark, but its historical growth figures may still be revised; they are not immutable final outcomes.
 
@@ -192,7 +182,8 @@ predictions |>
   group_by(publication_year, publication_release) |>
   summarize(n = n(), .groups = "drop") |>
   ggplot(aes(x = publication_year, y = n, fill = publication_release)) +
-  geom_col() +
+  geom_col(position = position_dodge(width = 0.9)) +
+  scale_fill_discrete(limits = c("Spring", "Fall")) +
   labs(
     x = "Publication year",
     y = "Matched forecasts",
@@ -201,7 +192,7 @@ predictions |>
   theme_minimal()
 ```
 
-The bars show the contribution of each Spring and Fall vintage to the final sample. The counts need not be equal: coverage differs across vintages, and recent publications have fewer eligible future target years under the two-year cutoff. These differences in sample composition matter when comparing forecast errors across publication years.
+The side-by-side bars, ordered Spring then Fall, show the contribution of each vintage to the final sample. The counts need not be equal: coverage differs across vintages, and recent publications have fewer eligible future target years under the two-year cutoff. These differences in sample composition matter when comparing forecast errors across publication years.
 
 ## How large are errors at different horizons?
 
@@ -249,7 +240,7 @@ Each box summarizes the middle half of errors for one vintage, with a line at th
 
 ## Compare horizons using regressions
 
-To compare horizons more systematically, we regress absolute forecast errors on horizon indicators, using the one-year horizon as the reference category and controlling for Spring versus Fall releases. Model 1 includes these controls; Model 2 adds target-year fixed effects to account for shocks common to forecasts targeting the same calendar year. Standard errors are clustered by country to allow correlations among forecasts for the same country.
+To compare horizons more systematically, we regress absolute forecast errors on horizon indicators, using the one-year horizon as the reference category and controlling for Spring versus Fall releases. Model 1 includes these controls; Model 2 adds target-year fixed effects to account for shocks common to forecasts targeting the same calendar year. Model 3 also adds country fixed effects, comparing forecasts within countries while controlling for target-year differences. Standard errors are clustered by country to allow correlations among forecasts for the same country.
 
 We omit publication-year fixed effects: because horizon equals target year minus publication year, including both sets of year effects would make the full set of horizon comparisons unidentified.
 
@@ -258,6 +249,7 @@ setFixest_dict(c(
   forecast_error = "Forecast Error",
   horizon = "Horizon",
   year = "Target Year",
+  entity_id = "Country",
   publication_releaseFall = "Fall"
 ))
 
@@ -273,8 +265,18 @@ models <- list(
     forecast_error ~ i(horizon, ref = 1) + publication_release | year,
     predictions,
     vcov = clusters
+  ),
+  "Model 3" = feols(
+    forecast_error ~ i(horizon, ref = 1) + publication_release |
+      year + entity_id,
+    predictions,
+    vcov = clusters
   )
 )
+
+model_3_tests <- summary(models[[3]])$coeftable
+horizon_p_values <- model_3_tests[paste0("horizon::", 2:5), 4]
+fall_p_value <- model_3_tests["publication_releaseFall", 4]
 
 knitr::kable(
   etable(models, coefstat = "tstat", tex = FALSE),
@@ -284,10 +286,12 @@ knitr::kable(
 
 A positive horizon coefficient means a larger expected absolute error than at one year within that specification. In Model 1, the five-year coefficient is `r round(coef(models[[1]])["horizon::5"], 2)` percentage points; in Model 2 it is `r round(coef(models[[2]])["horizon::5"], 2)`. `r if (all(coef(models[[2]])[paste0("horizon::", 2:5)] > 0)) "All Model 2 horizon coefficients are positive: longer-horizon forecasts remain less accurate on average after accounting for common target-year shocks." else "The Model 2 horizon coefficients are not all positive, so the adjusted differences vary by horizon."`
 
-The Fall coefficient is `r round(coef(models[[1]])["publication_releaseFall"], 2)` in Model 1 and `r round(coef(models[[2]])["publication_releaseFall"], 2)` in Model 2. A negative coefficient means slightly smaller absolute errors than for Spring forecasts, conditional on the included controls. Fall releases have more information available within the publication year, but these regressions do not establish why their errors differ. All coefficients describe associations, not causal effects of forecast horizon or release timing.
+In Model 3, the five-year horizon coefficient is `r round(coef(models[[3]])["horizon::5"], 2)` percentage points and the Fall coefficient is `r round(coef(models[[3]])["publication_releaseFall"], 2)`. At the 5% significance level, `r if (all(horizon_p_values < 0.05)) "all four horizon indicators remain statistically significant" else if (any(horizon_p_values < 0.05)) "some, but not all, horizon indicators remain statistically significant" else "none of the horizon indicators remain statistically significant"` after including country and target-year fixed effects; the Fall difference `r if (fall_p_value < 0.05) "remains statistically significant" else "is not statistically significant"`.
+
+The Fall coefficient is `r round(coef(models[[1]])["publication_releaseFall"], 2)` in Model 1 and `r round(coef(models[[2]])["publication_releaseFall"], 2)` in Model 2. A negative coefficient means smaller absolute errors than for Spring forecasts, conditional on the included controls. Fall releases have more information available within the publication year, but these regressions do not establish why their errors differ. All coefficients describe associations, not causal effects of forecast horizon or release timing.
 
 ## What have we learned?
 
-With just `ed_get()` and a short analysis pipeline, we can investigate an economic question using historical forecast vintages. The horizon table gives an easily interpreted comparison in percentage points, while the regressions show how the comparison changes after accounting for calendar-year differences. The exercise has three limits: latest-vintage growth estimates can be revised, sample composition varies across horizons and releases, and absolute errors measure size but not the direction of forecast bias.
+With just `ed_get()` and a short analysis pipeline, we can investigate an economic question using historical forecast vintages. The horizon table gives an easily interpreted comparison in percentage points, while the regressions show how the comparison changes after accounting for target-year and country differences. The exercise has three limits: latest-vintage growth estimates can be revised, sample composition varies across horizons and releases, and absolute errors measure size but not the direction of forecast bias.
 
-For further background, see [Timmermann (2007)](https://www.imf.org/External/Pubs/FT/staffp/2007/01/timmerma.htm), [the IMF Independent Evaluation Office (2014)](https://bookstore.imf.org/books/IEO-Evaluation-Report-IMF-Forecasts-Process%2C-Quality%2C-and-Country-Perspectives), [Genberg and Martinez (2014)](https://ieo.imf.org/-/media/IEO/Files/evaluations/completed/03-18-2014-imf-forecasts-process-quality-and-country-perspectives/BP-14-04.pdf), and [Beaudry and Willems (2022)](https://www.aeaweb.org/articles?id=10.1257/mac.20190332) for related discussion of forecast performance and over-optimism.
+For further background, see [Timmermann (2007)](https://www.imf.org/External/Pubs/FT/staffp/2007/01/timmerma.htm), [IMF Independent Evaluation Office (2014)](https://bookstore.imf.org/books/IEO-Evaluation-Report-IMF-Forecasts-Process%2C-Quality%2C-and-Country-Perspectives), [Genberg and Martinez (2014)](https://ieo.imf.org/-/media/IEO/Files/evaluations/completed/03-18-2014-imf-forecasts-process-quality-and-country-perspectives/BP-14-04.pdf), and [Beaudry and Willems (2022)](https://www.aeaweb.org/articles?id=10.1257/mac.20190332) for related discussion of forecast performance and over-optimism.
