@@ -3,7 +3,8 @@ pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   articles/imf-weo-forecast-errors: imf-weo-forecast-errors.html
-last_built: 2026-11-03T17:32Z
+  articles/wbids-net-flows: wbids-net-flows.html
+last_built: 2026-11-15T18:50Z
 urls:
   reference: https://tidy-intelligence.github.io/r-econdatasets/reference
   article: https://tidy-intelligence.github.io/r-econdatasets/articles
