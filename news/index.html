@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">econdatasets</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,7 +24,7 @@
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/tidy-intelligence/r-econdatasets/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/econdataverse/r-econdatasets/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -34,11 +34,29 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/tidy-intelligence/r-econdatasets/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/econdataverse/r-econdatasets/blob/v0.1.1/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="econdatasets-development-version">econdatasets (development version)<a class="anchor" aria-label="anchor" href="#econdatasets-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.1.1" id="econdatasets-011">econdatasets 0.1.1<a class="anchor" aria-label="anchor" href="#econdatasets-011"></a></h2><p class="text-muted">CRAN release: 2026-11-15</p>
+<div class="section level3">
+<h3 id="documentation-0-1-1">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-1-1"></a></h3>
+<ul><li>New article “How Accurate Are IMF Growth Forecasts?” analysing forecast errors across World Economic Outlook vintages using the <code>imfweo</code> dataset (<a href="https://github.com/fritzoc" class="external-link">@fritzoc</a>, <a href="https://github.com/econdataverse/r-econdatasets/issues/8" class="external-link">#8</a>).</li>
+<li>New article “Who Still Lends to Developing Countries?” on net debt flows by creditor type using the <code>wbids</code> dataset (<a href="https://github.com/econdataverse/r-econdatasets/issues/10" class="external-link">#10</a>).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="datasets-0-1-1">Datasets<a class="anchor" aria-label="anchor" href="#datasets-0-1-1"></a></h3>
+<ul><li>New <code>wbwdi</code> dataset with World Development Indicators entities and series.</li>
+<li>
+<code>wbids</code> dataset refreshed from the December 2025 World Bank International Debt Statistics bulk files.</li>
+<li>
+<code>imfweo</code> dataset now keeps legacy vintages (2007 to Spring 2025) and only appends newer World Economic Outlook releases.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="other-changes-0-1-1">Other changes<a class="anchor" aria-label="anchor" href="#other-changes-0-1-1"></a></h3>
+<ul><li>The package moved to the <code>econdataverse</code> GitHub organization. The website is now at <a href="https://econdataverse.github.io/r-econdatasets/" class="uri">https://econdataverse.github.io/r-econdatasets/</a> and issues should be filed at <a href="https://github.com/econdataverse/r-econdatasets/issues" class="external-link uri">https://github.com/econdataverse/r-econdatasets/issues</a>.</li>
+<li>Expanded unit tests to cover error handling when the Hugging Face API returns invalid responses (<a href="https://github.com/econdataverse/r-econdatasets/issues/4" class="external-link">#4</a>).</li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="econdatasets-010">econdatasets 0.1.0<a class="anchor" aria-label="anchor" href="#econdatasets-010"></a></h2><p class="text-muted">CRAN release: 2025-11-21</p>

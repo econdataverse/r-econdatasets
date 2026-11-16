@@ -10,14 +10,19 @@ packages and publicly hosted on 'Hugging Face'. Learn more about the
 
 Useful links:
 
-- <https://tidy-intelligence.github.io/r-econdatasets/>
+- <https://econdataverse.github.io/r-econdatasets/>
 
-- <https://github.com/tidy-intelligence/r-econdatasets>
+- <https://github.com/econdataverse/r-econdatasets>
 
 - Report bugs at
-  <https://github.com/tidy-intelligence/r-econdatasets/issues>
+  <https://github.com/econdataverse/r-econdatasets/issues>
 
 ## Author
 
 **Maintainer**: Christoph Scheuch <christoph@tidy-intelligence.com>
 ([ORCID](https://orcid.org/0009-0004-0423-6819)) \[copyright holder\]
+
+Authors:
+
+- Christoph Scheuch <christoph@tidy-intelligence.com>
+  ([ORCID](https://orcid.org/0009-0004-0423-6819)) \[copyright holder\]

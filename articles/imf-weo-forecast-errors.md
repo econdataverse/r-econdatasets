@@ -12,7 +12,7 @@ and [Genberg and Martinez
 (2014)](https://ieo.imf.org/-/media/IEO/Files/evaluations/completed/03-18-2014-imf-forecasts-process-quality-and-country-perspectives/BP-14-04.pdf).
 
 This article uses
-[`econdatasets::ed_get()`](https://tidy-intelligence.github.io/r-econdatasets/reference/ed_get.md)
+[`econdatasets::ed_get()`](https://econdataverse.github.io/r-econdatasets/reference/ed_get.md)
 to download WEO vintages, match forecasts to the latest available
 estimates of growth, and describe absolute forecast errors at horizons
 of one to five years. The exercise measures *accuracy*, not whether
@@ -429,7 +429,7 @@ associations, not causal effects of forecast horizon or release timing.
 ## What have we learned?
 
 With just
-[`ed_get()`](https://tidy-intelligence.github.io/r-econdatasets/reference/ed_get.md)
+[`ed_get()`](https://econdataverse.github.io/r-econdatasets/reference/ed_get.md)
 and a short analysis pipeline, we can investigate an economic question
 using historical forecast vintages. The horizon table gives an easily
 interpreted comparison in percentage points, while the regressions show

@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="index.html">econdatasets</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,7 +44,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json">
 </form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/tidy-intelligence/r-econdatasets/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/econdataverse/r-econdatasets/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -64,16 +64,16 @@
 <p>You can install <code>econdatasets</code> from <a href="https://cran.r-project.org/package=econdatasets" class="external-link">CRAN</a> via:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"econdatasets"</span><span class="op">)</span></span></code></pre></div>
-<p>You can install the development version of <code>econdatasets</code> from <a href="https://github.com/tidy-intelligence/r-econdatasets" class="external-link">GitHub</a> with:</p>
+<p>You can install the development version of <code>econdatasets</code> from <a href="https://github.com/econdataverse/r-econdatasets" class="external-link">GitHub</a> with:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
-<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"tidy-intelligence/r-econdatasets"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"econdataverse/r-econdatasets"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
 </h2>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidy-intelligence.github.io/r-econdatasets/">econdatasets</a></span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://econdataverse.github.io/r-econdatasets/">econdatasets</a></span><span class="op">)</span></span></code></pre></div>
 <p>Use <code><a href="reference/ed_get.html">ed_get()</a></code> to load a specific table from a dataset:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">counterparts</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ed_get.html">ed_get</a></span><span class="op">(</span><span class="st">"wbids"</span>, <span class="st">"counterparts"</span><span class="op">)</span></span>
@@ -100,9 +100,9 @@
 <span><span class="co">#&gt;   https://huggingface.co/api/datasets/econdataverse/imfweo/tree/main?recursive=1</span></span>
 <span><span class="co">#&gt; ✔ Found 3 Parquet table(s).</span></span>
 <span><span class="co">#&gt;              table                 filename                     path     size</span></span>
-<span><span class="co">#&gt; 1 economic_outlook economic_outlook.parquet economic_outlook.parquet 48413034</span></span>
-<span><span class="co">#&gt; 2         entities         entities.parquet         entities.parquet     7290</span></span>
-<span><span class="co">#&gt; 3           series           series.parquet           series.parquet    11779</span></span>
+<span><span class="co">#&gt; 1 economic_outlook economic_outlook.parquet economic_outlook.parquet 54694031</span></span>
+<span><span class="co">#&gt; 2         entities         entities.parquet         entities.parquet    11063</span></span>
+<span><span class="co">#&gt; 3           series           series.parquet           series.parquet    17208</span></span>
 <span><span class="co">#&gt;                                                                                          url</span></span>
 <span><span class="co">#&gt; 1 https://huggingface.co/datasets/econdataverse/imfweo/resolve/main/economic_outlook.parquet</span></span>
 <span><span class="co">#&gt; 2         https://huggingface.co/datasets/econdataverse/imfweo/resolve/main/entities.parquet</span></span>
@@ -112,13 +112,15 @@
 <code class="sourceCode R"><span><span class="fu"><a href="reference/ed_get_datasets.html">ed_get_datasets</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; → Fetching dataset list from</span></span>
 <span><span class="co">#&gt;   https://huggingface.co/api/datasets?author=econdataverse</span></span>
-<span><span class="co">#&gt; ✔ Found 2 datasets.</span></span>
+<span><span class="co">#&gt; ✔ Found 3 datasets.</span></span>
 <span><span class="co">#&gt;                dataset total_downloads            last_modified is_private</span></span>
-<span><span class="co">#&gt; 1  econdataverse/wbids              48 2025-10-28T14:57:47.000Z      FALSE</span></span>
-<span><span class="co">#&gt; 2 econdataverse/imfweo              21 2025-11-10T06:05:06.000Z      FALSE</span></span>
+<span><span class="co">#&gt; 1  econdataverse/wbids             109 2025-12-11T11:56:55.000Z      FALSE</span></span>
+<span><span class="co">#&gt; 2 econdataverse/imfweo            2121 2026-10-19T12:32:20.000Z      FALSE</span></span>
+<span><span class="co">#&gt; 3  econdataverse/wbwdi             115 2025-12-01T09:06:11.000Z      FALSE</span></span>
 <span><span class="co">#&gt;   is_gated</span></span>
 <span><span class="co">#&gt; 1    FALSE</span></span>
-<span><span class="co">#&gt; 2    FALSE</span></span></code></pre></div>
+<span><span class="co">#&gt; 2    FALSE</span></span>
+<span><span class="co">#&gt; 3    FALSE</span></span></code></pre></div>
 <p>If you miss a specific datasets, please consider opening an issue with your request.</p>
 </div>
 <div class="section level2">
@@ -145,8 +147,8 @@
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
 <li><a href="https://cloud.r-project.org/package=econdatasets" class="external-link">View on CRAN</a></li>
-<li><a href="https://github.com/tidy-intelligence/r-econdatasets/" class="external-link">Browse source code</a></li>
-<li><a href="https://github.com/tidy-intelligence/r-econdatasets/issues" class="external-link">Report a bug</a></li>
+<li><a href="https://github.com/econdataverse/r-econdatasets/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/econdataverse/r-econdatasets/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
 
@@ -178,7 +180,7 @@
 <ul class="list-unstyled">
 <li><a href="https://cran.r-project.org/package=econdatasets" class="external-link"><img src="https://www.r-pkg.org/badges/version/econdatasets" alt="CRAN status"></a></li>
 <li><a href="https://cran.r-project.org/package=econdatasets" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/econdatasets" alt="CRAN downloads"></a></li>
-<li><a href="https://app.codecov.io/gh/tidy-intelligence/r-econdatasets" class="external-link"><img src="https://codecov.io/gh/tidy-intelligence/r-econdatasets/graph/badge.svg" alt="Codecov test coverage"></a></li>
+<li><a href="https://app.codecov.io/gh/econdataverse/r-econdatasets" class="external-link"><img src="https://codecov.io/gh/econdataverse/r-econdatasets/graph/badge.svg" alt="Codecov test coverage"></a></li>
 </ul>
 </div>
 

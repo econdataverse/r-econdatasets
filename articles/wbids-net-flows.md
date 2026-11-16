@@ -12,7 +12,7 @@ than they received. The World Bank’s [International Debt Report
 private lenders and a growing role for multilateral creditors.
 
 This article uses
-[`econdatasets::ed_get()`](https://tidy-intelligence.github.io/r-econdatasets/reference/ed_get.md)
+[`econdatasets::ed_get()`](https://econdataverse.github.io/r-econdatasets/reference/ed_get.md)
 to download the World Bank’s International Debt Statistics (IDS),
 aggregate net flows by creditor type, and test whether negative net
 flows from private creditors became more common after 2022. The exercise
@@ -351,7 +351,7 @@ associations, not causal effects of higher interest rates.
 ## What have we learned?
 
 With
-[`ed_get()`](https://tidy-intelligence.github.io/r-econdatasets/reference/ed_get.md)
+[`ed_get()`](https://econdataverse.github.io/r-econdatasets/reference/ed_get.md)
 and a short analysis pipeline, we can track who lends to developing
 countries. On public external debt, private net flows fell sharply in
 2022 and 2023 while multilateral creditors increased their lending. The
