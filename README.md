@@ -10,10 +10,10 @@ status](https://www.r-pkg.org/badges/version/econdatasets)](https://cran.r-proje
 [![CRAN
 downloads](https://cranlogs.r-pkg.org/badges/econdatasets)](https://cran.r-project.org/package=econdatasets)
 ![R CMD
-Check](https://github.com/tidy-intelligence/r-econdatasets/actions/workflows/R-CMD-check.yaml/badge.svg)
-![Lint](https://github.com/tidy-intelligence/r-econdatasets/actions/workflows/lint.yaml/badge.svg)
+Check](https://github.com/econdataverse/r-econdatasets/actions/workflows/R-CMD-check.yaml/badge.svg)
+![Lint](https://github.com/econdataverse/r-econdatasets/actions/workflows/lint.yaml/badge.svg)
 [![Codecov test
-coverage](https://codecov.io/gh/tidy-intelligence/r-econdatasets/graph/badge.svg)](https://app.codecov.io/gh/tidy-intelligence/r-econdatasets)
+coverage](https://codecov.io/gh/econdataverse/r-econdatasets/graph/badge.svg)](https://app.codecov.io/gh/econdataverse/r-econdatasets)
 <!-- badges: end -->
 
 The ‘EconDataverse’ is a universe of open-source packages to work
@@ -32,11 +32,11 @@ install.packages("econdatasets")
 ```
 
 You can install the development version of `econdatasets` from
-[GitHub](https://github.com/tidy-intelligence/r-econdatasets) with:
+[GitHub](https://github.com/econdataverse/r-econdatasets) with:
 
 ``` r
 # install.packages("pak")
-pak::pak("tidy-intelligence/r-econdatasets")
+pak::pak("econdataverse/r-econdatasets")
 ```
 
 ## Usage
@@ -75,9 +75,9 @@ ed_get_tables("imfweo")
 #>   https://huggingface.co/api/datasets/econdataverse/imfweo/tree/main?recursive=1
 #> ✔ Found 3 Parquet table(s).
 #>              table                 filename                     path     size
-#> 1 economic_outlook economic_outlook.parquet economic_outlook.parquet 48413034
-#> 2         entities         entities.parquet         entities.parquet     7290
-#> 3           series           series.parquet           series.parquet    11779
+#> 1 economic_outlook economic_outlook.parquet economic_outlook.parquet 54694031
+#> 2         entities         entities.parquet         entities.parquet    11063
+#> 3           series           series.parquet           series.parquet    17208
 #>                                                                                          url
 #> 1 https://huggingface.co/datasets/econdataverse/imfweo/resolve/main/economic_outlook.parquet
 #> 2         https://huggingface.co/datasets/econdataverse/imfweo/resolve/main/entities.parquet
@@ -90,13 +90,15 @@ Use `ed_get_datasets()` to view all published datasets:
 ed_get_datasets()
 #> → Fetching dataset list from
 #>   https://huggingface.co/api/datasets?author=econdataverse
-#> ✔ Found 2 datasets.
+#> ✔ Found 3 datasets.
 #>                dataset total_downloads            last_modified is_private
-#> 1  econdataverse/wbids              48 2025-10-28T14:57:47.000Z      FALSE
-#> 2 econdataverse/imfweo              21 2025-11-10T06:05:06.000Z      FALSE
+#> 1  econdataverse/wbids             109 2025-12-11T11:56:55.000Z      FALSE
+#> 2 econdataverse/imfweo            2121 2026-10-19T12:32:20.000Z      FALSE
+#> 3  econdataverse/wbwdi             115 2025-12-01T09:06:11.000Z      FALSE
 #>   is_gated
 #> 1    FALSE
 #> 2    FALSE
+#> 3    FALSE
 ```
 
 If you miss a specific datasets, please consider opening an issue with

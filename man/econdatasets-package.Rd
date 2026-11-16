@@ -11,14 +11,19 @@ The 'EconDataverse' is a universe of open-source packages to work seamlessly wit
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://tidy-intelligence.github.io/r-econdatasets/}
-  \item \url{https://github.com/tidy-intelligence/r-econdatasets}
-  \item Report bugs at \url{https://github.com/tidy-intelligence/r-econdatasets/issues}
+  \item \url{https://econdataverse.github.io/r-econdatasets/}
+  \item \url{https://github.com/econdataverse/r-econdatasets}
+  \item Report bugs at \url{https://github.com/econdataverse/r-econdatasets/issues}
 }
 
 }
 \author{
 \strong{Maintainer}: Christoph Scheuch \email{christoph@tidy-intelligence.com} (\href{https://orcid.org/0009-0004-0423-6819}{ORCID}) [copyright holder]
+
+Authors:
+\itemize{
+  \item Christoph Scheuch \email{christoph@tidy-intelligence.com} (\href{https://orcid.org/0009-0004-0423-6819}{ORCID}) [copyright holder]
+}
 
 }
 \keyword{internal}
